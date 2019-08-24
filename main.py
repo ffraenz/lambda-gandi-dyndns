@@ -6,7 +6,7 @@ def handle_update(event, context):
     """Update endpoint entrypoint"""
 
     # Verify auth token
-    if not verify_auth(event['headers']['Authorization']):
+    if not verify_auth(event['headers'].get('Authorization', '')):
         print('Received request with invalid authorization token.')
         return {
             'statusCode': 403,
@@ -14,9 +14,10 @@ def handle_update(event, context):
         }
 
     # Collect update data
-    ip4_address = event['queryStringParameters']['ip']
-    ip6_address = event['queryStringParameters']['ip6']
-    domain = event['queryStringParameters']['domain']
+    params = event['queryStringParameters']
+    ip4_address = params.get('ip', '')
+    ip6_address = params.get('ip6', '')
+    domain = params.get('domain', '')
     domain_parts = domain.split('.') if domain else []
 
     # Check wether this is a valid request
@@ -28,15 +29,12 @@ def handle_update(event, context):
         }
 
     # Verify that the requested domain is whitelisted
-    if not is_domain_whitelisted(domain):
+    if not verify_domain(domain):
         print('The requested domain {} is not whitelisted.'.format(domain))
         return {
             'statusCode': 403,
             'body': json.dumps({ 'success': False })
         }
-
-    # Log request
-    print('Received request to set {} to {}.'.format(domain, ip4_address))
 
     # Derive domain base and record name from domain parts
     domain_base = '.'.join(domain_parts[-2:])
@@ -44,8 +42,11 @@ def handle_update(event, context):
 
     # Update A (IPv4) and/or AAAA (IPv6) DNS records on base domain
     if ip4_address:
+        print('Received request to set {} to {}.'.format(domain, ip4_address))
         update_record(domain_base, 'A', record_name, ip4_address)
+
     if ip6_address:
+        print('Received request to set {} to {}.'.format(domain, ip6_address))
         update_record(domain_base, 'AAAA', record_name, ip6_address)
 
     # Respond
@@ -62,7 +63,7 @@ def verify_auth(authorization):
     token = base64.b64encode('{}:{}'.format(username, password).encode())
     return authorization == 'Basic ' + token.decode()
 
-def is_domain_whitelisted(domain):
+def verify_domain(domain):
     """Verifies wether the given domain is whitelisted"""
 
     whitelisted_domains = os.environ['DOMAIN_WHITELIST'].split(',')
