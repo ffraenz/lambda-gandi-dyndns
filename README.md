@@ -36,8 +36,8 @@ Parameters:
 
 | Key                    | Description                                                  |
 | ---------------------- | ------------------------------------------------------------ |
-| `AUTH_USERNAME` | Basic authentication username required to fulfil requests   |
-| `AUTH_PASSWORD` | Basic authentication password required to fulfil requests   |
+| `AUTH_USERNAME`        | Basic authentication username required to fulfil requests   |
+| `AUTH_PASSWORD`        | Basic authentication password required to fulfil requests   |
 | `GANDI_API_KEY`        | [Gandi.net API key](https://doc.livedns.gandi.net/)          |
 | `RECORD_TTL`           | Record time to live (TTL)                                    |
 | `DOMAIN_WHITELIST`     | Comma-separated (`,`) whitelist of domain names that may receive updates |

@@ -41,17 +41,21 @@ def handle_update(event, context):
     record_name = '.'.join(domain_parts[:-2]) if len(domain_parts) > 2 else '@'
 
     # Update A (IPv4) and/or AAAA (IPv6) DNS records on base domain
+    success = True
+
     if ip4_address:
-        print('Received request to set {} to {}.'.format(domain, ip4_address))
-        update_record(domain_base, 'A', record_name, ip4_address)
+        print('Request to set {} to {}.'.format(domain, ip4_address))
+        success = success and update_record(
+            domain_base, 'A', record_name, ip4_address)
 
     if ip6_address:
-        print('Received request to set {} to {}.'.format(domain, ip6_address))
-        update_record(domain_base, 'AAAA', record_name, ip6_address)
+        print('Request to set {} to {}.'.format(domain, ip6_address))
+        success = success and update_record(
+            domain_base, 'AAAA', record_name, ip6_address)
 
     # Respond
     return {
-        'statusCode': 200,
+        'statusCode': 200 if success else 500,
         'body': json.dumps({ 'success': True })
     }
 
