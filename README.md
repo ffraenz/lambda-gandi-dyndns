@@ -1,6 +1,19 @@
+
 # lambda-gandi-dyndns
 
 Amazon AWS Lambda function forwarding IP address updates from routers (e.g. FRITZ!Box) to the [Gandi.net LiveDNS API](https://doc.livedns.gandi.net/) to provide a custom dynamic DNS service.
+
+## Build
+
+Build Lambda function ZIP archive:
+
+```bash
+pip3 install --target ./package requests
+cd package
+zip -r9 ../function.zip .
+cd ..
+zip -g function.zip main.py
+```
 
 ## Setup
 
@@ -30,7 +43,7 @@ Parameters:
 
 - `ip` – New IPv4 address
 - `ip6` – New IPv6 address
-- `domain` – Dynamic DNS domain name; Needs to be whitelisted in the environment variables
+- `domain` – Single or multiple comma-separated (`,`) Dynamic DNS domain names; Needs to be whitelisted in the environment variables
 
 ## Environment variables
 

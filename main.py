@@ -1,6 +1,6 @@
 
 import json, os, base64
-from botocore.vendored import requests
+import requests
 
 def handle_update(event, context):
     """Update endpoint entrypoint"""
@@ -17,41 +17,44 @@ def handle_update(event, context):
     params = event['queryStringParameters']
     ip4_address = params.get('ip', '')
     ip6_address = params.get('ip6', '')
-    domain = params.get('domain', '')
-    domain_parts = domain.split('.') if domain else []
+    domains = params.get('domain', '').split(',')
 
     # Check wether this is a valid request
-    if (not ip4_address and not ip6_address) or len(domain_parts) < 2:
-        print('Received invalid request.')
+    if not ip4_address and not ip6_address:
+        print('Either ip or ip6 parameter is required.')
         return {
             'statusCode': 400,
             'body': json.dumps({ 'success': False })
         }
 
-    # Verify that the requested domain is whitelisted
-    if not verify_domain(domain):
-        print('The requested domain {} is not whitelisted.'.format(domain))
-        return {
-            'statusCode': 403,
-            'body': json.dumps({ 'success': False })
-        }
+    # Enforce domain whitelist
+    for domain in domains:
+        if not verify_domain(domain):
+            print('The requested domain {} is not whitelisted.'.format(domain))
+            return {
+                'statusCode': 403,
+                'body': json.dumps({ 'success': False })
+            }
 
-    # Derive domain base and record name from domain parts
-    domain_base = '.'.join(domain_parts[-2:])
-    record_name = '.'.join(domain_parts[:-2]) if len(domain_parts) > 2 else '@'
-
-    # Update A (IPv4) and/or AAAA (IPv6) DNS records on base domain
+    # Fulfil request on each domain
     success = True
+    for domain in domains:
+        # Derive domain base and record name from domain parts
+        parts = domain.split('.')
+        domain_base = '.'.join(parts[-2:])
+        record_name = '.'.join(parts[:-2]) if len(parts) > 2 else '@'
 
-    if ip4_address:
-        print('Request to set {} to {}.'.format(domain, ip4_address))
-        success = success and update_record(
-            domain_base, 'A', record_name, ip4_address)
+        # Update A (IPv4) DNS record on base domain
+        if ip4_address:
+            print('Request to set {} to {}.'.format(domain, ip4_address))
+            success = success and update_record(
+                domain_base, 'A', record_name, ip4_address)
 
-    if ip6_address:
-        print('Request to set {} to {}.'.format(domain, ip6_address))
-        success = success and update_record(
-            domain_base, 'AAAA', record_name, ip6_address)
+        # Update AAAA (IPv6) DNS record on base domain
+        if ip6_address:
+            print('Request to set {} to {}.'.format(domain, ip6_address))
+            success = success and update_record(
+                domain_base, 'AAAA', record_name, ip6_address)
 
     # Respond
     return {
